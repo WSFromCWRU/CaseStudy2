@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import f1_score
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
 
 sensor_names = ['Acc_x', 'Acc_y', 'Acc_z', 'Gyr_x', 'Gyr_y', 'Gyr_z']
 train_suffix = '_train_1.csv'
@@ -35,10 +37,27 @@ def predict_test(train_data, train_labels, test_data):
         features_last_3[:, :, i] = scaler_last_3.fit_transform(features_last_3[:, :, i])
 
     standardized_data = np.concatenate([features_first_3, features_last_3], axis=2)
-
     # dimensions for the array should be: 5211, 60, & 6
 
-    test_outputs = 0
+    # Two options:
+    # stateful LSTM with return_sequences=False or stateless LSTM with return_sequences=True for all 5211 entries
+
+    model = Sequential()
+    model.add(LSTM(50, batch_input_shape=(5211, 60, 6), stateful=True, return_sequences=False))
+    model.add(Dense(6, activation='sigmoid'))
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    model.fit(standardized_data, train_labels, epochs=10, batch_size=64)
+
+    # standardize test data for prediction (IS THIS CHEATING???)
+    test_features_first_3 = test_data[:, :, :3]
+    test_features_last_3 = test_data[:, :, 3:]
+    for i in range(3):
+        test_features_first_3[:, :, i] = scaler_first_3.transform(test_features_first_3[:, :, i])
+    for i in range(3):
+        test_features_last_3[:, :, i] = scaler_last_3.transform(test_features_last_3[:, :, i])
+    standardized_test_data = np.concatenate([test_features_first_3, test_features_last_3], axis=2)
+
+    test_outputs = model.predict(standardized_test_data)
     
     return test_outputs
 
@@ -50,18 +69,18 @@ if __name__ == "__main__":
 
     test_outputs = predict_test(train_data, train_labels, test_data)
 
-    # micro_f1 = f1_score(test_labels, test_outputs, average='micro')
-    # macro_f1 = f1_score(test_labels, test_outputs, average='macro')
-    # print(f'Micro-averaged F1 score: {micro_f1}')
-    # print(f'Macro-averaged F1 score: {macro_f1}')
-    #
-    # n_test = test_labels.size
-    # plt.subplot(2, 1, 1)
-    # plt.plot(np.arange(n_test), test_labels, 'b.')
-    # plt.xlabel('Time window')
-    # plt.ylabel('Target')
-    # plt.subplot(2, 1, 2)
-    # plt.plot(np.arange(n_test), test_outputs, 'r.')
-    # plt.xlabel('Time window')
-    # plt.ylabel('Output (predicted target)')
-    # plt.show()
+    micro_f1 = f1_score(test_labels, test_outputs, average='micro')
+    macro_f1 = f1_score(test_labels, test_outputs, average='macro')
+    print(f'Micro-averaged F1 score: {micro_f1}')
+    print(f'Macro-averaged F1 score: {macro_f1}')
+
+    n_test = test_labels.size
+    plt.subplot(2, 1, 1)
+    plt.plot(np.arange(n_test), test_labels, 'b.')
+    plt.xlabel('Time window')
+    plt.ylabel('Target')
+    plt.subplot(2, 1, 2)
+    plt.plot(np.arange(n_test), test_outputs, 'r.')
+    plt.xlabel('Time window')
+    plt.ylabel('Output (predicted target)')
+    plt.show()
