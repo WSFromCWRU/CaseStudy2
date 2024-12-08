@@ -1,4 +1,6 @@
+import os
 
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,7 +8,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import f1_score
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
+from tensorflow.keras.layers import LSTM, Dense, Input, InputLayer
 
 sensor_names = ['Acc_x', 'Acc_y', 'Acc_z', 'Gyr_x', 'Gyr_y', 'Gyr_z']
 train_suffix = '_train_1.csv'
@@ -43,10 +45,11 @@ def predict_test(train_data, train_labels, test_data):
     # stateful LSTM with return_sequences=False or stateless LSTM with return_sequences=True for all 5211 entries
 
     model = Sequential()
-    model.add(LSTM(50, batch_input_shape=(5211, 60, 6), stateful=True, return_sequences=False))
-    model.add(Dense(6, activation='sigmoid'))
+    model.add(InputLayer(batch_input_shape=(5211, 60, 6)))
+    model.add(LSTM(1, return_sequences=True))
+    model.add(Dense(1, activation='sigmoid'))
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-    model.fit(standardized_data, train_labels, epochs=10, batch_size=64)
+    model.fit(standardized_data, train_labels, epochs=10, batch_size=5211)
 
     # standardize test data for prediction (IS THIS CHEATING???)
     test_features_first_3 = test_data[:, :, :3]
