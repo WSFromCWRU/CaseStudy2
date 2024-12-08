@@ -1,65 +1,67 @@
 
 
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
+import pandas as pd
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import f1_score
-from Evaluate_classifier import load_sensor_data
 
 sensor_names = ['Acc_x', 'Acc_y', 'Acc_z', 'Gyr_x', 'Gyr_y', 'Gyr_z']
 train_suffix = '_train_1.csv'
 test_suffix = '_train_2.csv'
-train_end_index = 3511
 
-# Logistic regression hyperparameters
-C = 1
-l1_ratio = 0.9
-max_iter = int(1e4)
+def load_sensor_data(sensor_names, suffix):
+    data_slice_0 = np.loadtxt(sensor_names[0] + suffix, delimiter=',')
+    data = np.empty((data_slice_0.shape[0], data_slice_0.shape[1], len(sensor_names)))
+    data[:, :, 0] = data_slice_0
+    for sensor_index in range(1, len(sensor_names)):
+        data[:, :, sensor_index] = np.loadtxt(sensor_names[sensor_index] + suffix, delimiter=',')
 
+    return data
+
+# data is loaded in the order: array containing all rows, inside a row is all the columns,
+# & inside all the columns is all the different features
 def predict_test(train_data, train_labels, test_data):
-    # Feature extraction: compute mean and standard deviation of each row for
-    # each sensor and concatenate across sensors to form the feature vector
-    mean_train_feature = np.mean(train_data, axis=1)
-    std_train_feature = np.std(train_data, axis=1)
-    train_features = np.hstack((mean_train_feature, std_train_feature))
-    mean_test_feature = np.mean(test_data, axis=1)
-    std_test_feature = np.std(test_data, axis=1)
-    test_features = np.hstack((mean_test_feature, std_test_feature))
+    # Standardize the first three Acceleration features & then standardize the last three Gyr features
+    features_first_3 = train_data[:, :, :3]
+    features_last_3 = train_data[:, :, 3:]
+    scaler_first_3 = StandardScaler()
+    scaler_last_3 = MinMaxScaler()
 
-    # Standardize features and train a logistic regression model
-    scaler = StandardScaler()
-    train_features_std = scaler.fit_transform(train_features)
-    test_features_std = scaler.transform(test_features)
+    for i in range(3):
+        features_first_3[:, :, i] = scaler_first_3.fit_transform(features_first_3[:, :, i])
+
+    for i in range(3):
+        features_last_3[:, :, i] = scaler_last_3.fit_transform(features_last_3[:, :, i])
+
+    standardized_data = np.concatenate([features_first_3, features_last_3], axis=2)
+
+    # dimensions for the array should be: 5211, 60, & 6
+
+    test_outputs = 0
     
     return test_outputs
 
-# Run this code only if being used as a script, not being imported
 if __name__ == "__main__":
-    # Load labels and sensor data into 3-D array
     train_labels = np.loadtxt('labels' + train_suffix, dtype='int')
     train_data = load_sensor_data(sensor_names, train_suffix)
     test_labels = np.loadtxt('labels' + test_suffix, dtype='int')
     test_data = load_sensor_data(sensor_names, test_suffix)
 
-    # Predict activities on test data
     test_outputs = predict_test(train_data, train_labels, test_data)
 
-    # Compute micro and macro-averaged F1 scores
-    micro_f1 = f1_score(test_labels, test_outputs, average='micro')
-    macro_f1 = f1_score(test_labels, test_outputs, average='macro')
-    print(f'Micro-averaged F1 score: {micro_f1}')
-    print(f'Macro-averaged F1 score: {macro_f1}')
-
-    # Examine outputs compared to labels
-    n_test = test_labels.size
-    plt.subplot(2, 1, 1)
-    plt.plot(np.arange(n_test), test_labels, 'b.')
-    plt.xlabel('Time window')
-    plt.ylabel('Target')
-    plt.subplot(2, 1, 2)
-    plt.plot(np.arange(n_test), test_outputs, 'r.')
-    plt.xlabel('Time window')
-    plt.ylabel('Output (predicted target)')
-    plt.show()
-    
+    # micro_f1 = f1_score(test_labels, test_outputs, average='micro')
+    # macro_f1 = f1_score(test_labels, test_outputs, average='macro')
+    # print(f'Micro-averaged F1 score: {micro_f1}')
+    # print(f'Macro-averaged F1 score: {macro_f1}')
+    #
+    # n_test = test_labels.size
+    # plt.subplot(2, 1, 1)
+    # plt.plot(np.arange(n_test), test_labels, 'b.')
+    # plt.xlabel('Time window')
+    # plt.ylabel('Target')
+    # plt.subplot(2, 1, 2)
+    # plt.plot(np.arange(n_test), test_outputs, 'r.')
+    # plt.xlabel('Time window')
+    # plt.ylabel('Output (predicted target)')
+    # plt.show()
