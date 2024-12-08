@@ -5,37 +5,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import f1_score
-
-# train_1_data = pd.read_csv('Acc_x_train_2.csv')
-# train_2_data = pd.read_csv('Acc_x_train_2.csv')
-# combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
-# combined_data.to_csv('Acc_x.csv', index=False)
-# train_1_data = pd.read_csv('Acc_y_train_1.csv')
-# train_2_data = pd.read_csv('Acc_y_train_2.csv')
-# combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
-# combined_data.to_csv('Acc_y.csv', index=False)
-# train_1_data = pd.read_csv('Acc_z_train_1.csv')
-# train_2_data = pd.read_csv('Acc_z_train_2.csv')
-# combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
-# combined_data.to_csv('Acc_z.csv', index=False)
-# train_1_data = pd.read_csv('Gyr_x_train_1.csv')
-# train_2_data = pd.read_csv('Gyr_x_train_2.csv')
-# combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
-# combined_data.to_csv('Gyr_x.csv', index=False)
-# train_1_data = pd.read_csv('Gyr_y_train_1.csv')
-# train_2_data = pd.read_csv('Gyr_y_train_2.csv')
-# combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
-# combined_data.to_csv('Gyr_y.csv', index=False)
-# train_1_data = pd.read_csv('Gyr_z_train_1.csv')
-# train_2_data = pd.read_csv('Gyr_z_train_2.csv')
-# combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
-# combined_data.to_csv('Gyr_z.csv', index=False)
-# train_1_data = pd.read_csv('labels_train_1.csv')
-# train_2_data = pd.read_csv('labels_train_2.csv')
-# combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
-# combined_data.to_csv('labels', index=False)
+from Evaluate_classifier import load_sensor_data
 
 sensor_names = ['Acc_x', 'Acc_y', 'Acc_z', 'Gyr_x', 'Gyr_y', 'Gyr_z']
+train_suffix = '_train_1.csv'
+test_suffix = '_train_2.csv'
 train_end_index = 3511
 
 # Logistic regression hyperparameters
@@ -62,30 +36,21 @@ def predict_test(train_data, train_labels, test_data):
 
 # Run this code only if being used as a script, not being imported
 if __name__ == "__main__":
-    # Load labels and training sensor data into 3-D array
-    labels = np.loadtxt('labels_train_1.csv', dtype='int')
-    data_slice_0 = np.loadtxt(sensor_names[0] + '_train_1.csv', delimiter=',')
-    data = np.empty((data_slice_0.shape[0], data_slice_0.shape[1],
-                     len(sensor_names)))
-    data[:, :, 0] = data_slice_0
-    del data_slice_0
-    for sensor_index in range(1, len(sensor_names)):
-        data[:, :, sensor_index] = np.loadtxt(sensor_names[sensor_index] + '_train_1.csv', delimiter=',')
+    # Load labels and sensor data into 3-D array
+    train_labels = np.loadtxt('labels' + train_suffix, dtype='int')
+    train_data = load_sensor_data(sensor_names, train_suffix)
+    test_labels = np.loadtxt('labels' + test_suffix, dtype='int')
+    test_data = load_sensor_data(sensor_names, test_suffix)
 
-    # Split into training and test by row index. Do not use a random split as
-    # rows are not independent!
-    train_data = data[:train_end_index+1, :, :]
-    train_labels = labels[:train_end_index+1]
-    test_data = data[train_end_index+1:, :, :]
-    test_labels = labels[train_end_index+1:]
+    # Predict activities on test data
     test_outputs = predict_test(train_data, train_labels, test_data)
-    
+
     # Compute micro and macro-averaged F1 scores
     micro_f1 = f1_score(test_labels, test_outputs, average='micro')
     macro_f1 = f1_score(test_labels, test_outputs, average='macro')
     print(f'Micro-averaged F1 score: {micro_f1}')
     print(f'Macro-averaged F1 score: {macro_f1}')
-    
+
     # Examine outputs compared to labels
     n_test = test_labels.size
     plt.subplot(2, 1, 1)
