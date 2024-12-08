@@ -44,6 +44,7 @@ def predict_test(train_data, train_labels, test_data):
     # Two options:
     # stateful LSTM with return_sequences=False or stateless LSTM with return_sequences=True for all 5211 entries
 
+    # TRY TO USE PYTORCH CAUSE THIS LIBRARY FUCKING SUCKS
     model = Sequential()
     model.add(InputLayer(batch_input_shape=(5211, 60, 6)))
     model.add(LSTM(1, return_sequences=True))
