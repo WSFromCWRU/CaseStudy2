@@ -3,38 +3,37 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import f1_score
 
-train_1_data = pd.read_csv('Acc_x_train_2.csv')
-train_2_data = pd.read_csv('Acc_x_train_2.csv')
-combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
-combined_data.to_csv('Acc_x.csv', index=False)
-train_1_data = pd.read_csv('Acc_y_train_1.csv')
-train_2_data = pd.read_csv('Acc_y_train_2.csv')
-combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
-combined_data.to_csv('Acc_y.csv', index=False)
-train_1_data = pd.read_csv('Acc_z_train_1.csv')
-train_2_data = pd.read_csv('Acc_z_train_2.csv')
-combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
-combined_data.to_csv('Acc_z.csv', index=False)
-train_1_data = pd.read_csv('Gyr_x_train_1.csv')
-train_2_data = pd.read_csv('Gyr_x_train_2.csv')
-combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
-combined_data.to_csv('Gyr_x.csv', index=False)
-train_1_data = pd.read_csv('Gyr_y_train_1.csv')
-train_2_data = pd.read_csv('Gyr_y_train_2.csv')
-combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
-combined_data.to_csv('Gyr_y.csv', index=False)
-train_1_data = pd.read_csv('Gyr_z_train_1.csv')
-train_2_data = pd.read_csv('Gyr_z_train_2.csv')
-combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
-combined_data.to_csv('Gyr_z.csv', index=False)
-train_1_data = pd.read_csv('labels_train_1.csv')
-train_2_data = pd.read_csv('labels_train_2.csv')
-combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
-combined_data.to_csv('labels', index=False)
+# train_1_data = pd.read_csv('Acc_x_train_2.csv')
+# train_2_data = pd.read_csv('Acc_x_train_2.csv')
+# combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
+# combined_data.to_csv('Acc_x.csv', index=False)
+# train_1_data = pd.read_csv('Acc_y_train_1.csv')
+# train_2_data = pd.read_csv('Acc_y_train_2.csv')
+# combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
+# combined_data.to_csv('Acc_y.csv', index=False)
+# train_1_data = pd.read_csv('Acc_z_train_1.csv')
+# train_2_data = pd.read_csv('Acc_z_train_2.csv')
+# combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
+# combined_data.to_csv('Acc_z.csv', index=False)
+# train_1_data = pd.read_csv('Gyr_x_train_1.csv')
+# train_2_data = pd.read_csv('Gyr_x_train_2.csv')
+# combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
+# combined_data.to_csv('Gyr_x.csv', index=False)
+# train_1_data = pd.read_csv('Gyr_y_train_1.csv')
+# train_2_data = pd.read_csv('Gyr_y_train_2.csv')
+# combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
+# combined_data.to_csv('Gyr_y.csv', index=False)
+# train_1_data = pd.read_csv('Gyr_z_train_1.csv')
+# train_2_data = pd.read_csv('Gyr_z_train_2.csv')
+# combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
+# combined_data.to_csv('Gyr_z.csv', index=False)
+# train_1_data = pd.read_csv('labels_train_1.csv')
+# train_2_data = pd.read_csv('labels_train_2.csv')
+# combined_data = pd.concat([train_1_data, train_2_data], ignore_index=True)
+# combined_data.to_csv('labels', index=False)
 
 sensor_names = ['Acc_x', 'Acc_y', 'Acc_z', 'Gyr_x', 'Gyr_y', 'Gyr_z']
 train_end_index = 3511
@@ -53,15 +52,11 @@ def predict_test(train_data, train_labels, test_data):
     mean_test_feature = np.mean(test_data, axis=1)
     std_test_feature = np.std(test_data, axis=1)
     test_features = np.hstack((mean_test_feature, std_test_feature))
-    
+
     # Standardize features and train a logistic regression model
     scaler = StandardScaler()
     train_features_std = scaler.fit_transform(train_features)
     test_features_std = scaler.transform(test_features)
-    
-    lr = LogisticRegression(penalty='elasticnet', solver='saga', max_iter=max_iter, C=C, l1_ratio=l1_ratio)
-    lr.fit(train_features_std, train_labels)
-    test_outputs = lr.predict(test_features_std)
     
     return test_outputs
 
@@ -69,15 +64,13 @@ def predict_test(train_data, train_labels, test_data):
 if __name__ == "__main__":
     # Load labels and training sensor data into 3-D array
     labels = np.loadtxt('labels_train_1.csv', dtype='int')
-    data_slice_0 = np.loadtxt(sensor_names[0] + '_train_1.csv',
-                              delimiter=',')
+    data_slice_0 = np.loadtxt(sensor_names[0] + '_train_1.csv', delimiter=',')
     data = np.empty((data_slice_0.shape[0], data_slice_0.shape[1],
                      len(sensor_names)))
     data[:, :, 0] = data_slice_0
     del data_slice_0
     for sensor_index in range(1, len(sensor_names)):
-        data[:, :, sensor_index] = np.loadtxt(
-            sensor_names[sensor_index] + '_train_1.csv', delimiter=',')
+        data[:, :, sensor_index] = np.loadtxt(sensor_names[sensor_index] + '_train_1.csv', delimiter=',')
 
     # Split into training and test by row index. Do not use a random split as
     # rows are not independent!
